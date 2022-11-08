@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <stack>
 
 #define BF_SRC_PATH "hello.bf"
 #define ASM_OUT_PATH "hello.asm"
@@ -22,7 +23,7 @@ void codegen_prelude(std::ofstream &out_s) {
     out_s << "\tmov rax, 1\n";
     out_s << "\tmov rdi, 1\n";
     out_s << "\tmov rsi, msg\n";
-    out_s << "\tmov rdx, 20\n";
+    out_s << "\tmov rdx, 1\n";
     out_s << "\tsyscall\n";
     out_s << "\tret\n";
     // Start of main procedure
@@ -40,6 +41,7 @@ void codegen_epilogue(std::ofstream &out_s) {
 
 void parse_line(std::ofstream &out_s, std::string &line) {
     unsigned int addr_count = 0;
+    std::stack<unsigned int> loop_stack;   
     for (char c: line) {
         switch (c) {
             case '+':
@@ -58,10 +60,21 @@ void parse_line(std::ofstream &out_s, std::string &line) {
                 out_s << "\tcall put_char\n";
                 break;
             case '[':
-                // out_s << "addr_" << ++addr_count << ":\n";
+                out_s << "\tcmp byte[buff+rbx], 0\n";
+                out_s << "\tje addr_" << addr_count+1 << "\n";
+                out_s << "addr_" << addr_count+2 << ":\n";
+                loop_stack.push(addr_count+2);
+                addr_count += 2;
                 break;
             case ']':
+            {
+                unsigned int return_addr = loop_stack.top();
+                out_s << "\tcmp byte[buff+rbx], 0\n";
+                out_s << "\tjne addr_" << return_addr << "\n";
+                out_s << "addr_" << return_addr-1 << ":\n";
+                loop_stack.pop();
                 break;
+            }
             default:
                 break;
         }
