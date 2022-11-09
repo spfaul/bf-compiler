@@ -1,9 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 #include <stack>
-
-#define BF_SRC_PATH "hello.bf"
-#define ASM_OUT_PATH "hello.asm"
 
 void codegen_prelude(std::ofstream &out_s) {
     // Assembly output information
@@ -91,12 +89,15 @@ void parse_line(std::ofstream &out_s, std::string &line, unsigned int &addr_coun
     }
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc != 3)
+        throw std::invalid_argument("Compiler accepts 2 arguments - Do ./bf [BF_SRC_PATH] [ASM_OUTPUT_PATH]");
+
     // Initialise file handlers
     std::ifstream bf_src_fhandler;
     std::ofstream asm_out_fhandler;
-    bf_src_fhandler.open(BF_SRC_PATH);
-    asm_out_fhandler.open(ASM_OUT_PATH);
+    bf_src_fhandler.open(argv[1]);
+    asm_out_fhandler.open(argv[2]);
 
     codegen_prelude(asm_out_fhandler);   
     // Parse BF source

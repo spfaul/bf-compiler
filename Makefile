@@ -9,6 +9,7 @@ build:
 	$(CXX) $(CXX_FLAGS) $(SRCS) -o $(EXEC_OUT_PATH)
 
 test:
-	./bf.out
-	fasm hello.asm hello
-	./hello
+	@$(EXEC_OUT_PATH) examples/hello.bf examples/hello.asm
+	@fasm examples/hello.asm examples/hello
+	@chmod +x examples/hello
+	./examples/hello
