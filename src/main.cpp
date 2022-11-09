@@ -26,6 +26,15 @@ void codegen_prelude(std::ofstream &out_s) {
     out_s << "\tmov rdx, 1\n";
     out_s << "\tsyscall\n";
     out_s << "\tret\n";
+    out_s << "get_char:\n";
+    out_s << "\tmov rax, 0\n";
+    out_s << "\tmov rdi, 0\n";
+    out_s << "\tmov rsi, msg\n";
+    out_s << "\tmov rdx, 1\n";
+    out_s << "\tsyscall\n";
+    out_s << "\tmov al, byte[msg]\n";
+    out_s << "\tmov byte[buff+rbx], al\n";
+    out_s << "\tret\n";
     // Start of main procedure
     out_s << "main:\n";
     // rbx register holds data pointer
@@ -39,9 +48,7 @@ void codegen_epilogue(std::ofstream &out_s) {
     out_s << "\tsyscall\n";
 }
 
-void parse_line(std::ofstream &out_s, std::string &line) {
-    unsigned int addr_count = 0;
-    std::stack<unsigned int> loop_stack;   
+void parse_line(std::ofstream &out_s, std::string &line, unsigned int &addr_count, std::stack<unsigned int> &loop_stack) {
     for (char c: line) {
         switch (c) {
             case '+':
@@ -59,6 +66,9 @@ void parse_line(std::ofstream &out_s, std::string &line) {
             case '.':
                 out_s << "\tcall put_char\n";
                 break;
+            case ',':
+                out_s << "\tcall get_char\n";
+                break;           
             case '[':
                 out_s << "\tcmp byte[buff+rbx], 0\n";
                 out_s << "\tje addr_" << addr_count+1 << "\n";
@@ -90,9 +100,11 @@ int main() {
 
     codegen_prelude(asm_out_fhandler);   
     // Parse BF source
+    unsigned int addr_count = 0;
+    std::stack<unsigned int> loop_stack;   
     std::string line;
     while (getline(bf_src_fhandler, line)) {
-        parse_line(asm_out_fhandler, line);
+        parse_line(asm_out_fhandler, line, addr_count, loop_stack);
     }
     codegen_epilogue(asm_out_fhandler);
     // Close file handlers
