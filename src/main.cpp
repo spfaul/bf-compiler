@@ -8,16 +8,16 @@ void codegen_prelude(std::ofstream &out_s) {
     out_s << "format ELF64 executable 3\n";
     // .bss and .data segment
     out_s << "segment readable writable\n";
-    out_s << "\tmsg rb 1\n";
-    out_s << "\tbuff rb 1000\n";
+    out_s << "\tmsg rq 1\n";
+    out_s << "\tbuff rq 1000\n";
     // .code segment
     out_s << "segment readable executable\n";
     // Specify entry point label
     out_s << "entry main\n";
     // Helper procedures
     out_s << "put_char:\n";
-    out_s << "\tmov al, byte[buff+rbx]\n";
-    out_s << "\tmov byte[msg], al\n";
+    out_s << "\tmov rax, qword[buff+rbx]\n";
+    out_s << "\tmov qword[msg], rax\n";
     out_s << "\tmov rax, 1\n";
     out_s << "\tmov rdi, 1\n";
     out_s << "\tmov rsi, msg\n";
@@ -30,8 +30,8 @@ void codegen_prelude(std::ofstream &out_s) {
     out_s << "\tmov rsi, msg\n";
     out_s << "\tmov rdx, 1\n";
     out_s << "\tsyscall\n";
-    out_s << "\tmov al, byte[msg]\n";
-    out_s << "\tmov byte[buff+rbx], al\n";
+    out_s << "\tmov rax, qword[msg]\n";
+    out_s << "\tmov qword[buff+rbx], rax\n";
     out_s << "\tret\n";
     // Start of main procedure
     out_s << "main:\n";
@@ -50,16 +50,16 @@ void parse_line(std::ofstream &out_s, std::string &line, unsigned int &addr_coun
     for (char c: line) {
         switch (c) {
             case '+':
-                out_s << "\tadd byte[buff+rbx], 1\n";
+                out_s << "\tadd qword[buff+rbx], 1\n";
                 break;
             case '-':
-                out_s << "\tsub byte[buff+rbx], 1\n";
+                out_s << "\tsub qword[buff+rbx], 1\n";
                 break;
             case '>':
-                out_s << "\tadd rbx, 1\n";
+                out_s << "\tadd rbx, 8\n";
                 break;
             case '<':
-                out_s << "\tsub rbx, 1\n";
+                out_s << "\tsub rbx, 8\n";
                 break;
             case '.':
                 out_s << "\tcall put_char\n";
@@ -68,7 +68,7 @@ void parse_line(std::ofstream &out_s, std::string &line, unsigned int &addr_coun
                 out_s << "\tcall get_char\n";
                 break;           
             case '[':
-                out_s << "\tcmp byte[buff+rbx], 0\n";
+                out_s << "\tcmp qword[buff+rbx], 0\n";
                 out_s << "\tje addr_" << addr_count+1 << "\n";
                 out_s << "addr_" << addr_count+2 << ":\n";
                 loop_stack.push(addr_count+2);
@@ -77,7 +77,7 @@ void parse_line(std::ofstream &out_s, std::string &line, unsigned int &addr_coun
             case ']':
             {
                 unsigned int return_addr = loop_stack.top();
-                out_s << "\tcmp byte[buff+rbx], 0\n";
+                out_s << "\tcmp qword[buff+rbx], 0\n";
                 out_s << "\tjne addr_" << return_addr << "\n";
                 out_s << "addr_" << return_addr-1 << ":\n";
                 loop_stack.pop();
